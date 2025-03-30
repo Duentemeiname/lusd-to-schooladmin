@@ -6,7 +6,7 @@ Kursanzahl = 23
 print("Dieses Script erstellt eine CSV-Datei für den Import in school@min. Sie benötigen die Schülerbezogene Kursliste, die Sie aus der LUSD exportiert haben.\n"
       "Bitte installieren Sie die folgenden Python-Bibliotheken, wenn Sie sie noch nicht installiert haben: pandas, openpyxl, datetime.\n"
       "Sie können die Bibliotheken installieren, indem Sie 'pip install -r requirements.txt' in der Kommandozeile eingeben.\n"
-"Eine Anleitung, wie Sie die Schülerbezogene Kursliste exportieren, finden Sie hier: https://wiki.medienzentrum-mtk.de/e/de/anleitungen/auth/lusdexport \n"
+"Eine Anleitung, wie Sie die Schülerbezogene Kursliste exportieren, finden Sie unter: https://wiki.medienzentrum-mtk.de/e/de/anleitungen/auth/lusdexport \n"
 "Bitte stellen Sie sicher, dass die Schülerbezogene Kursliste im selben Verzeichnis wie dieses Script liegt.\n"
 "Die CSV-Datei wird im selben Verzeichnis wie dieses Script erstellt und wird wiefolgt benannt: 'Datum'-KNE-Import-SuS.csv\n"
 "Bitte beachten Sie, dass die CSV-Datei nur für den Import in school@min geeignet ist.")
@@ -63,7 +63,7 @@ try:
         'Beschreibung', 'UserId'
     ]
     for i in range(1, Kursanzahl):
-        csvColumns.append(f'Fach_{i}')
+        csvColumns.append(f'Fach{i}')
 
     csvDf = pd.DataFrame(columns=csvColumns)
     newRows = []
@@ -109,7 +109,7 @@ try:
             }
             
             for i in range(1, min(len(individuelleKurse) + 1, Kursanzahl)):
-                newRow[f'Fach_{i}'] = individuelleKurse[i - 1]
+                newRow[f'Fach{i}'] = individuelleKurse[i - 1]
             
             newRows.append(newRow)
 
