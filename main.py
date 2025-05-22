@@ -1,14 +1,13 @@
 import pandas as pd
 import datetime
+from tkinter import Tk
+from tkinter.filedialog import askopenfilename
 
 Kursanzahl = 23 
 
-print("Dieses Script erstellt eine CSV-Datei für den Import in school@min. Sie benötigen die Schülerbezogene Kursliste, die Sie aus der LUSD exportiert haben.\n"
-      "Bitte installieren Sie die folgenden Python-Bibliotheken, wenn Sie sie noch nicht installiert haben: pandas, openpyxl, datetime.\n"
-      "Sie können die Bibliotheken installieren, indem Sie 'pip install -r requirements.txt' in der Kommandozeile eingeben.\n"
+print("Dieses Programm erstellt eine CSV-Datei für den Import in school@min. Sie benötigen die Schülerbezogene Kursliste, die Sie aus der LUSD exportiert haben.\n"
 "Eine Anleitung, wie Sie die Schülerbezogene Kursliste exportieren, finden Sie unter: https://wiki.medienzentrum-mtk.de/e/de/anleitungen/auth/lusdexport \n"
-"Bitte stellen Sie sicher, dass die Schülerbezogene Kursliste im selben Verzeichnis wie dieses Script liegt.\n"
-"Die CSV-Datei wird im selben Verzeichnis wie dieses Script erstellt und wird wiefolgt benannt: 'Datum'-KNE-Import-SuS.csv\n"
+"Die CSV-Datei wird im selben Verzeichnis wie dieses Programm erstellt und wird wiefolgt benannt: 'Datum'-KNE-Import-SuS.csv\n"
 "Bitte beachten Sie, dass die CSV-Datei nur für den Import in school@min geeignet ist.")
 print("")
 print("Copyright 2025 Luca Dünte luca.duente@baseworks.de BASEWORKS GmbH")
@@ -28,14 +27,25 @@ if lizenz != "Ja":
     print("Sie müssen die Lizenzbedingungen akzeptieren, um das Script zu verwenden.")
     exit()
 
-print("Bitte geben Sie den Dateinamen der Schülerbezogenen Kursliste ein (ohne Dateiendung).")
+Tk().withdraw()
 
-filename = input()
+print("Bitte wählen Sie die XLSX-Datei mit der Schülerbezogenen Kursliste aus.")
+filename = askopenfilename(
+    title="Kursliste auswählen",
+    filetypes=[("Excel-Dateien", "*.xlsx")]
+)
+
+print("Beachten Sie, dass die Erstellung der CSV-Datei einige Minuten in Anspruch nehmen kann, je nach Größe der Datei.")
+
+if not filename:
+    print("Es wurde keine Datei ausgewählt.")
+    exit()
 
 try:
-    df = pd.read_excel(f"{filename}.xlsx", engine='openpyxl')
+    df = pd.read_excel(filename, engine='openpyxl')
+    print("Datei erfolgreich geladen.")
 except FileNotFoundError:
-    print("Die Datei wurde nicht gefunden. Bitte stellen Sie sicher, dass die Datei im selben Verzeichnis wie dieses Script liegt.")
+    print("Die Datei wurde nicht gefunden.")
     exit()
 except Exception as e:
     print(f"Ein Fehler ist aufgetreten: {e}")

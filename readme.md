@@ -7,17 +7,16 @@ This File contains:
 - Class
 - Students Courses which are not part of the Class itself 
 
-# Installation 
+# Run the Script 
+Download the latest .exe File from the Releases Page and executet it on your machine.
+[Release](https://github.com/Duentemeiname/lusd-to-schooladmin/releases)
+
+# Run Python Script instead
 To run this script you need python on your machine. 
 Get Python from: https://www.python.org/downloads/
 
 The script has the following dependecies: pandas, openpyxl, datetime
 Install them by running pip install -r requirements.txt (consider using pyvenv)
-
-# Run the Script 
-python main.py
-
-Follow the instructions, the script gaves you.
 
 # License
 MIT License
