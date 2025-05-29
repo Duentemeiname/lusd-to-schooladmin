@@ -115,7 +115,7 @@ try:
                 'Passwort': "",
                 'Gruppe': "Schüler",
                 'Beschreibung': "",
-                'UserId': student
+                'UserId': ""
             }
             
             for i in range(1, min(len(individuelleKurse) + 1, Kursanzahl)):
