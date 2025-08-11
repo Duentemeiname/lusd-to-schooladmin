@@ -22,10 +22,23 @@ print("Permission is hereby granted, free of charge, to any person obtaining a c
 "WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.")
 print("")
 print("Bitte bestätigen Sie, dass Sie die Lizenzbedingungen gelesen und verstanden haben, indem Sie 'Ja' eingeben.")
-lizenz = input()
-if lizenz != "Ja":
+lizenz = input().strip().lower()
+if lizenz != "ja":
     print("Sie müssen die Lizenzbedingungen akzeptieren, um das Script zu verwenden.")
     exit()
+
+kurseEinbeziehen = None
+print("Möchten Sie Kurse in die Auswertung einbeziehen? (Ja/Nein)")
+
+while kurseEinbeziehen not in ("Ja", "Nein"):
+    antwort = input().strip().lower()
+    if antwort == "ja":
+        kurseEinbeziehen = "Ja"
+    elif antwort == "nein":
+        kurseEinbeziehen = "Nein"
+    else:
+        print("Bitte geben Sie 'Ja' oder 'Nein' ein.")
+
 
 Tk().withdraw()
 
@@ -103,10 +116,13 @@ try:
             gemeinsameKurse = set()
         
         for student, kurse in studentCourses.items():
-            individuelleKurse = [kurs for kurs in kurse if kurs not in gemeinsameKurse]
-            
+            if kurseEinbeziehen == "Ja":
+                individuelleKurse = [kurs for kurs in kurse if kurs not in gemeinsameKurse]
+            else:
+                individuelleKurse = []
+
             firstRow = dfKlasse[dfKlasse['Anzeige_Zeile'] == student].iloc[0]
-            
+
             newRow = {
                 'Anmeldename': "",
                 'Nachname': firstRow.get('SLR_NachName', ""),
@@ -117,10 +133,11 @@ try:
                 'Beschreibung': "",
                 'UserId': ""
             }
-            
-            for i in range(1, min(len(individuelleKurse) + 1, Kursanzahl)):
-                newRow[f'Fach{i}'] = individuelleKurse[i - 1]
-            
+
+            if kurseEinbeziehen:
+                for i in range(1, min(len(individuelleKurse) + 1, Kursanzahl)):
+                    newRow[f'Fach{i}'] = individuelleKurse[i - 1]
+
             newRows.append(newRow)
 
     csvDf = pd.DataFrame(newRows, columns=csvColumns)
