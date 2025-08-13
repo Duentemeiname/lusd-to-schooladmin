@@ -76,7 +76,12 @@ try:
         df.drop(columns=columnsToDrop, inplace=True)
 
     df = df.applymap(lambda x: x.split('/')[0] if isinstance(x, str) else x)
-    df = df.applymap(lambda x: x.split('-')[0] if isinstance(x, str) else x)
+
+    spalten_mit_minus_bereinigen = [col for col in df.columns if col not in ('SLR_VorName', 'SLR_NachName')]
+
+    df[spalten_mit_minus_bereinigen] = df[spalten_mit_minus_bereinigen].applymap(
+        lambda x: x.split('-')[0] if isinstance(x, str) else x
+    )
 
     kursdatenSpalten = [col for col in df.columns if col.startswith('Kursdaten_')]
     df[kursdatenSpalten] = df[kursdatenSpalten].fillna("")
