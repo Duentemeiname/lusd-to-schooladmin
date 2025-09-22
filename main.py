@@ -12,6 +12,8 @@ print("Dieses Programm erstellt eine CSV-Datei für den Import in school@min. Si
 print("")
 print("Copyright 2025 Luca Dünte luca.duente@baseworks.de BASEWORKS GmbH")
 print("")
+print("Version: v1.0.4")
+print("")
 print("Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), "
 "to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, "
 "and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:"
@@ -27,123 +29,132 @@ if lizenz != "ja":
     print("Sie müssen die Lizenzbedingungen akzeptieren, um das Script zu verwenden.")
     exit()
 
-kurseEinbeziehen = None
-print("Möchten Sie Kurse in die Auswertung einbeziehen? (Ja/Nein)")
+print("Welchen Export möchten Sie einlesen? (1) Für eine Schülerbezogene Kursliste (2) Für eine Schülerliste mit Geburtsdatum")
+exportType = input().strip()
 
-while kurseEinbeziehen not in ("Ja", "Nein"):
-    antwort = input().strip().lower()
-    if antwort == "ja":
-        kurseEinbeziehen = "Ja"
-    elif antwort == "nein":
-        kurseEinbeziehen = "Nein"
-    else:
-        print("Bitte geben Sie 'Ja' oder 'Nein' ein.")
+if exportType == "1":
+    print("Sie haben die Schülerbezogene Kursliste ausgewählt.")
+    kurseEinbeziehen = None
+    print("Möchten Sie Kurse in die Auswertung einbeziehen? (Ja/Nein)")
+
+    while kurseEinbeziehen not in ("Ja", "Nein"):
+        antwort = input().strip().lower()
+        if antwort == "ja":
+            kurseEinbeziehen = "Ja"
+        elif antwort == "nein":
+            kurseEinbeziehen = "Nein"
+        else:
+            print("Bitte geben Sie 'Ja' oder 'Nein' ein.")
 
 
-Tk().withdraw()
+    Tk().withdraw()
 
-print("Bitte wählen Sie die XLSX-Datei mit der Schülerbezogenen Kursliste aus.")
-filename = askopenfilename(
-    title="Kursliste auswählen",
-    filetypes=[("Excel-Dateien", "*.xlsx")]
-)
-
-print("Beachten Sie, dass die Erstellung der CSV-Datei einige Minuten in Anspruch nehmen kann, je nach Größe der Datei.")
-
-if not filename:
-    print("Es wurde keine Datei ausgewählt.")
-    exit()
-
-try:
-    df = pd.read_excel(filename, engine='openpyxl')
-    print("Datei erfolgreich geladen.")
-except FileNotFoundError:
-    print("Die Datei wurde nicht gefunden.")
-    exit()
-except Exception as e:
-    print(f"Ein Fehler ist aufgetreten: {e}")
-    exit()
-
-try:
-    df.replace(r'^\s*$', None, regex=True, inplace=True)
-    df['Anzeige_Zeile'] = df['Anzeige_Zeile'].astype(str).str.strip()
-    df = df[df['Anzeige_ZeileNr'] == 1]
-    df = df.sort_values(by=["Anzeige_Zeile"], ascending=True)
-
-    names = ["SLR_Namenszusatz", "KLA_Klassenlehrer", "Anzeige_ZeileNr", "Anzeige_Gruppe", "Fach"]
-    for name in names:
-        columnsToDrop = [col for col in df.columns if col.startswith(name)]
-        df.drop(columns=columnsToDrop, inplace=True)
-
-    df = df.applymap(lambda x: x.split('/')[0] if isinstance(x, str) else x)
-
-    spalten_mit_minus_bereinigen = [col for col in df.columns if col not in ('SLR_VorName', 'SLR_NachName')]
-
-    df[spalten_mit_minus_bereinigen] = df[spalten_mit_minus_bereinigen].applymap(
-        lambda x: x.split('-')[0] if isinstance(x, str) else x
+    print("Bitte wählen Sie die XLSX-Datei mit der Schülerbezogenen Kursliste aus.")
+    filename = askopenfilename(
+        title="Kursliste auswählen",
+        filetypes=[("Excel-Dateien", "*.xlsx")]
     )
 
-    kursdatenSpalten = [col for col in df.columns if col.startswith('Kursdaten_')]
-    df[kursdatenSpalten] = df[kursdatenSpalten].fillna("")
+    print("Beachten Sie, dass die Erstellung der CSV-Datei einige Minuten in Anspruch nehmen kann, je nach Größe der Datei.")
 
-    csvColumns = [
-        'Anmeldename', 'Nachname', 'Vorname', 'Klasse', 'Passwort', 'Gruppe',
-        'Beschreibung', 'UserId'
-    ]
-    for i in range(1, Kursanzahl):
-        csvColumns.append(f'Fach{i}')
+    if not filename:
+        print("Es wurde keine Datei ausgewählt.")
+        exit()
 
-    csvDf = pd.DataFrame(columns=csvColumns)
-    newRows = []
+    try:
+        df = pd.read_excel(filename, engine='openpyxl')
+        print("Datei erfolgreich geladen.")
+    except FileNotFoundError:
+        print("Die Datei wurde nicht gefunden.")
+        exit()
+    except Exception as e:
+        print(f"Ein Fehler ist aufgetreten: {e}")
+        exit()
 
-    klassen = df['KLA_Klassennamen'].dropna().unique()
+    try:
+        df.replace(r'^\s*$', None, regex=True, inplace=True)
+        df['Anzeige_Zeile'] = df['Anzeige_Zeile'].astype(str).str.strip()
+        df = df[df['Anzeige_ZeileNr'] == 1]
+        df = df.sort_values(by=["Anzeige_Zeile"], ascending=True)
 
-    for klasse in klassen:
-        dfKlasse = df[df['KLA_Klassennamen'] == klasse]
-        
-        uniqueStudentIds = dfKlasse['Anzeige_Zeile'].dropna().unique()
-        
-        studentCourses = {}
-        for student in uniqueStudentIds:
-            studentRows = dfKlasse[dfKlasse['Anzeige_Zeile'] == student]
-            kurse = set()
-            for _, row in studentRows.iterrows():
-                for i in range(0, 12): 
-                    kursKey = f'Kursdaten_{i}'
-                    kursValue = row.get(kursKey, "").strip()
-                    if kursValue:
-                        kurse.add(kursValue)
-            studentCourses[student] = kurse
+        names = ["SLR_Namenszusatz", "KLA_Klassenlehrer", "Anzeige_ZeileNr", "Anzeige_Gruppe", "Fach"]
+        for name in names:
+            columnsToDrop = [col for col in df.columns if col.startswith(name)]
+            df.drop(columns=columnsToDrop, inplace=True)
 
-        if studentCourses:
-            gemeinsameKurse = set.intersection(*studentCourses.values())
-        else:
-            gemeinsameKurse = set()
-        
-        for student, kurse in studentCourses.items():
-            if kurseEinbeziehen == "Ja":
-                individuelleKurse = [kurs for kurs in kurse if kurs not in gemeinsameKurse]
+        df = df.applymap(lambda x: x.split('/')[0] if isinstance(x, str) else x)
+
+        spalten_mit_minus_bereinigen = [col for col in df.columns if col not in ('SLR_VorName', 'SLR_NachName')]
+
+        df[spalten_mit_minus_bereinigen] = df[spalten_mit_minus_bereinigen].applymap(
+            lambda x: x.split('-')[0] if isinstance(x, str) else x
+        )
+
+        kursdatenSpalten = [col for col in df.columns if col.startswith('Kursdaten_')]
+        df[kursdatenSpalten] = df[kursdatenSpalten].fillna("")
+
+        csvColumns = [
+            'Anmeldename', 'Nachname', 'Vorname', 'Klasse', 'Passwort', 'Gruppe',
+            'Beschreibung', 'UserId'
+        ]
+        for i in range(1, Kursanzahl):
+            csvColumns.append(f'Fach{i}')
+
+        csvDf = pd.DataFrame(columns=csvColumns)
+        newRows = []
+
+        klassen = df['KLA_Klassennamen'].dropna().unique()
+
+        for klasse in klassen:
+            dfKlasse = df[df['KLA_Klassennamen'] == klasse]
+            
+            uniqueStudentIds = dfKlasse['Anzeige_Zeile'].dropna().unique()
+            
+            studentCourses = {}
+            for student in uniqueStudentIds:
+                studentRows = dfKlasse[dfKlasse['Anzeige_Zeile'] == student]
+                kurse = set()
+                for _, row in studentRows.iterrows():
+                    for i in range(0, 12): 
+                        kursKey = f'Kursdaten_{i}'
+                        kursValue = row.get(kursKey, "").strip()
+                        if kursValue:
+                            kurse.add(kursValue)
+                studentCourses[student] = kurse
+
+            if studentCourses:
+                gemeinsameKurse = set.intersection(*studentCourses.values())
             else:
-                individuelleKurse = []
+                gemeinsameKurse = set()
+            
+            for student, kurse in studentCourses.items():
+                if kurseEinbeziehen == "Ja":
+                    individuelleKurse = [kurs for kurs in kurse if kurs not in gemeinsameKurse]
+                else:
+                    individuelleKurse = []
 
-            firstRow = dfKlasse[dfKlasse['Anzeige_Zeile'] == student].iloc[0]
+                firstRow = dfKlasse[dfKlasse['Anzeige_Zeile'] == student].iloc[0]
 
-            newRow = {
-                'Anmeldename': "",
-                'Nachname': firstRow.get('SLR_NachName', ""),
-                'Vorname': firstRow.get('SLR_VorName', ""),
-                'Klasse': klasse,
-                'Passwort': "",
-                'Gruppe': "Schüler",
-                'Beschreibung': "",
-                'UserId': ""
-            }
+                newRow = {
+                    'Anmeldename': "",
+                    'Nachname': firstRow.get('SLR_NachName', ""),
+                    'Vorname': firstRow.get('SLR_VorName', ""),
+                    'Klasse': klasse,
+                    'Passwort': "",
+                    'Gruppe': "Schüler",
+                    'Beschreibung': "",
+                    'UserId': ""
+                }
 
-            if kurseEinbeziehen:
-                for i in range(1, min(len(individuelleKurse) + 1, Kursanzahl)):
-                    newRow[f'Fach{i}'] = individuelleKurse[i - 1]
+                if kurseEinbeziehen:
+                    for i in range(1, min(len(individuelleKurse) + 1, Kursanzahl)):
+                        newRow[f'Fach{i}'] = individuelleKurse[i - 1]
 
-            newRows.append(newRow)
+                newRows.append(newRow)
+
+    except Exception as e:
+        print(f"Ein Fehler ist aufgetreten: {e}")
+        exit()
 
     csvDf = pd.DataFrame(newRows, columns=csvColumns)
     csvDf = csvDf.applymap(lambda x: x.strip() if isinstance(x, str) else x)
@@ -153,6 +164,92 @@ try:
 
     print("Die CSV-Datei wurde als 'KNE-Import.csv' erstellt.")
 
-except Exception as e:
-    print(f"Ein Fehler ist aufgetreten: {e}")
-    exit()
+elif exportType == "2":
+    print("Sie haben die Schülerliste mit Geburtsdatum ausgewählt.")
+    print("Möchten Sie das Geburtsdatum als Passwort setzen (j/n)")
+    geburtsdatumAlsPasswort = input().strip().lower()
+    if geburtsdatumAlsPasswort not in ("j", "n"):
+        print("Ungültige Eingabe. Bitte geben Sie 'j' oder 'n' ein.")
+        exit()
+
+    Tk().withdraw()
+
+    print("Bitte wählen Sie die XLSX-Datei mit der Schülerliste mit Geburtsdatum aus.")
+    filename = askopenfilename(
+        title="Kursliste auswählen",
+        filetypes=[("Excel-Dateien", "*.xlsx")]
+    )
+
+    print("Beachten Sie, dass die Erstellung der CSV-Datei einige Minuten in Anspruch nehmen kann, je nach Größe der Datei.")
+
+    if not filename:
+        print("Es wurde keine Datei ausgewählt.")
+        exit()
+
+    try:
+        df = pd.read_excel(filename, engine='openpyxl')
+        print("Datei erfolgreich geladen.")
+    except FileNotFoundError:
+        print("Die Datei wurde nicht gefunden.")
+        exit()
+    except Exception as e:
+        print(f"Ein Fehler ist aufgetreten: {e}")
+        exit()
+
+    try:
+
+        df.replace(r'^\s*$', None, regex=True, inplace=True)
+
+        csvColumns = [
+                'Anmeldename', 'Nachname', 'Vorname', 'Klasse', 'Passwort', 'Gruppe',
+                'Beschreibung', 'UserId'
+            ]
+        for i in range(1, Kursanzahl):
+            csvColumns.append(f'Fach{i}')
+        
+        csvDf = pd.DataFrame(columns=csvColumns)
+        newRows = []
+        
+        for _, row in df.iterrows():
+            if geburtsdatumAlsPasswort == "j":
+                newRow = {
+                    'Anmeldename': "",
+                    'Nachname': row.get('Schueler_Nachname', ""),
+                    'Vorname': row.get('Schueler_Vorname', ""),
+                    'Klasse': row.get('Klassen_Klassenbezeichnung', ""),
+                    'Passwort': row.get('Schueler_Geburtsdatum', ""),
+                    'Gruppe': "Schüler",
+                    'Beschreibung': "",
+                    'UserId': ""
+                }
+                newRows.append(newRow)
+            if geburtsdatumAlsPasswort == "n":
+                newRow = {
+                    'Anmeldename': "",
+                    'Nachname': row.get('Schueler_Nachname', ""),
+                    'Vorname': row.get('Schueler_Vorname', ""),
+                    'Klasse': row.get('Klassen_Klassenbezeichnung', ""),
+                    'Passwort': "",
+                    'Gruppe': "Schüler",
+                    'Beschreibung': "",
+                    'UserId': ""
+                }
+                newRows.append(newRow)
+
+        csvDf = pd.DataFrame(newRows, columns=csvColumns)
+        csvDf = csvDf.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+
+        csvDf["Klasse"].replace("", pd.NA, inplace=True)
+        csvDf = csvDf.sort_values(
+            by="Klasse",
+            key=lambda col: col.notna(),
+            ascending=False
+        )
+
+        today = datetime.datetime.today().strftime("%d.%m.%Y")
+        csvDf.to_csv(f"{today}-KNE-Import-SuS.csv", index=False, sep=';')
+
+        print("Die CSV-Datei wurde als 'KNE-Import.csv' erstellt.")
+    except Exception as e:
+        print(f"Ein Fehler ist aufgetreten: {e}")
+        exit()
